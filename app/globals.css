@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
@@ -23,4 +23,45 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* globals.css */
+
+.cl-rootBox {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    #2a1f5e 0%,
+    #0e0d14 55%
+  ) !important;
+}
+
+.cl-card {
+  font-family: 'Sora', sans-serif !important;
+}
+
+.cl-footer > *:last-child {
+  display: none !important;
+}
+
+.cl-rootBox {
+  border-radius: 20px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f0b17;
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #8b5cf6, #6d28d9);
+  border-radius: 999px;
+  border: 2px solid #0f0b17;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a855f7;
 }
