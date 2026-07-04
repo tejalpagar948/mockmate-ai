@@ -10,6 +10,7 @@ import { useUser } from '@clerk/nextjs';
 import db from '@/utils/db';
 import { mockInterview } from '@/utils/schema';
 import moment from 'moment';
+import { NextResponse } from "next/server"
 
 const InterviewModalContext = createContext<{
   openModal: () => void;
@@ -52,12 +53,41 @@ export function InterviewModalProvider({
       const MockJsonResponse = data.result.replace('```json', '').replace('```', '').trim();
       console.log(JSON.parse(MockJsonResponse));
       setJsonResponse(MockJsonResponse);
-  
-      // setIsOpen(false);
-      // router.push('/interview');
-    } catch (error) {
-      console.error("Error starting interview:", error);
-      alert(error instanceof Error ? error.message : "Failed to start interview. Please try again.");
+
+      if (MockJsonResponse) {
+        const resp = await db.insert(mockInterview).values({
+          mockId: uuidv4(),
+          jsonMockResp: MockJsonResponse,
+          jobPosition: details.jobPosition,
+          jobDesc: details.skills,
+          jobExperience: details.yearsOfExperience,
+          createdBy: user?.primaryEmailAddress?.emailAddress ?? '',
+          createdAt: new Date(),
+        }).returning({ mockId: mockInterview.mockId });
+        console.log("resp", resp);
+        if (resp) {
+          setIsOpen(false);
+          router.push(`/dashboard/interview/${resp[0].mockId}`);
+        }
+      }
+
+    } catch (error: any) {
+      console.error("Error generating interview questions:", error);
+
+      const message = error?.message || "";
+      const isQuotaError =
+        error?.status === 429 ||
+        message.includes("RESOURCE_EXHAUSTED") ||
+        message.includes("quota");
+
+      return NextResponse.json(
+        {
+          error: isQuotaError
+            ? "You've hit the API rate limit. Please wait a minute and try again."
+            : "Something went wrong while generating questions.",
+        },
+        { status: isQuotaError ? 429 : 500 }
+      );
     } finally {
       setLoading(false);
     }
