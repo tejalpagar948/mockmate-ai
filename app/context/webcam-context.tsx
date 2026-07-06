@@ -8,6 +8,7 @@ import {
     useRef,
     useEffect,
 } from "react";
+import { toast } from "sonner"
 
 interface WebcamContextType {
     stream: MediaStream | null;
@@ -29,11 +30,20 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
     const streamRef = useRef<MediaStream | null>(null);
 
     const enableCamera = useCallback(async () => {
-        // Already enabled
-        if (streamRef.current) {
+        if (
+            streamRef.current &&
+            streamRef.current.active &&
+            streamRef.current.getTracks().every(track => track.readyState === "live")
+        ) {
             setIsEnabled(true);
             setIsReady(true);
             return;
+        }
+
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+            setStream(null);
         }
 
         setError(null);
@@ -42,6 +52,17 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true,
+            });
+
+            // Detect mid-session permission revoke
+            mediaStream.getTracks().forEach(track => {
+                track.onended = () => {
+                    streamRef.current = null;
+                    setStream(null);
+                    setIsEnabled(false);
+                    setIsReady(false);
+                    localStorage.removeItem("cameraEnabled");
+                };
             });
 
             streamRef.current = mediaStream;
@@ -53,6 +74,12 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         } catch (err) {
             console.error(err);
 
+            if (err instanceof DOMException) {
+                toast.error(`${err.name}: ${err.message}`);
+            } else {
+                toast.error("Failed to access camera/microphone.");
+            }
+
             setStream(null);
             streamRef.current = null;
             setIsEnabled(false);
@@ -62,7 +89,6 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
             localStorage.removeItem("cameraEnabled");
         }
     }, []);
-
     const disableCamera = useCallback(() => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
 
@@ -74,7 +100,6 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("cameraEnabled");
     }, []);
 
-    // Auto restore camera after refresh
     useEffect(() => {
         const autoEnableCamera = async () => {
             const shouldEnable = localStorage.getItem("cameraEnabled");
