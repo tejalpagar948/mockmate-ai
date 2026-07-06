@@ -6,9 +6,11 @@ interface QuestionCardProps {
     question: string;
     onSkip: () => void;
     isLastQuestion?: boolean;
+    userAnswer?: string;
+    interimResult?: string;
 }
 
-export default function QuestionCard({ question, onSkip, isLastQuestion }: QuestionCardProps) {
+export default function QuestionCard({ question, onSkip, userAnswer, interimResult, isLastQuestion }: QuestionCardProps) {
 
     const textToSpeech = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -46,6 +48,16 @@ export default function QuestionCard({ question, onSkip, isLastQuestion }: Quest
                 <p className="text-sm text-gray-300 leading-relaxed">
                     <span className="font-semibold text-emerald-400">Use STAR: </span>
                     set up the Situation, your Task, the Action you took, and the Result. Tap Record Answer when ready.
+                </p>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex-1 min-h-[180px]">
+                <p className="text-[11px] text-white/40 font-semibold tracking-wide mb-2">
+                    YOUR ANSWER
+                </p>
+                <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap">
+                    {userAnswer}
+                    {interimResult && ` ${interimResult}`}
                 </p>
             </div>
 

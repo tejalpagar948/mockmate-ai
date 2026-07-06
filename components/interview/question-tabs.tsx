@@ -19,11 +19,11 @@ export default function QuestionTabs({ questions, activeQ, onQuestionChange }: Q
                     key={i}
                     onClick={() => onQuestionChange(i)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${i === activeQ
-                            ? "bg-violet-600 text-white"
-                            : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                        ? "bg-violet-600 text-white"
+                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                         }`}
                 >
-                    Question #{i + 1}
+                    Question {i + 1}
                 </button>
             ))}
         </div>
