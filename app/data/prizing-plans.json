@@ -1,0 +1,113 @@
+{
+    "billingOptions": [
+        "monthly",
+        "yearly"
+    ],
+    "plans": [
+        {
+            "id": "free",
+            "name": "Free",
+            "description": "Test the waters before your next round.",
+            "monthlyPrice": 0,
+            "yearlyPrice": 0,
+            "featured": false,
+            "cta": "Current plan",
+            "paymentLink": {
+                "monthly": null,
+                "yearly": null
+            },
+            "features": [
+                {
+                    "label": "3 mock interviews / month",
+                    "included": true
+                },
+                {
+                    "label": "Behavioral questions only",
+                    "included": true
+                },
+                {
+                    "label": "Basic AI feedback",
+                    "included": true
+                },
+                {
+                    "label": "Voice + webcam mode",
+                    "included": false
+                },
+                {
+                    "label": "Performance scoring",
+                    "included": false
+                }
+            ]
+        },
+        {
+            "id": "pro",
+            "name": "Pro",
+            "description": "For active job-seekers prepping every week.",
+            "monthlyPrice": 499,
+            "yearlyPrice": 399,
+            "featured": true,
+            "cta": "Upgrade to Pro",
+            "paymentLink": {
+                "monthly": "https://buy.stripe.com/test_fZudR974jboz2iTfQgaAw01",
+                "yearly": "https://rzp.io/l/mockmate-pro-yearly"
+            },
+            "features": [
+                {
+                    "label": "Unlimited mock interviews",
+                    "included": true
+                },
+                {
+                    "label": "Behavioral, Technical & System design",
+                    "included": true
+                },
+                {
+                    "label": "Voice + webcam interview mode",
+                    "included": true
+                },
+                {
+                    "label": "Detailed AI scoring & feedback",
+                    "included": true
+                },
+                {
+                    "label": "Answer history & progress tracking",
+                    "included": true
+                }
+            ]
+        },
+        {
+            "id": "premium",
+            "name": "Premium",
+            "description": "Full coaching for your final-round push.",
+            "monthlyPrice": 999,
+            "yearlyPrice": 799,
+            "featured": false,
+            "cta": "Upgrade to Premium",
+            "paymentLink": {
+                "monthly": "https://rzp.io/l/mockmate-premium-monthly",
+                "yearly": "https://rzp.io/l/mockmate-premium-yearly"
+            },
+            "features": [
+                {
+                    "label": "Everything in Pro",
+                    "included": true
+                },
+                {
+                    "label": "Company-specific question sets",
+                    "included": true
+                },
+                {
+                    "label": "1:1 resume + PAR framing review",
+                    "included": true
+                },
+                {
+                    "label": "Priority AI response speed",
+                    "included": true
+                },
+                {
+                    "label": "Downloadable session reports",
+                    "included": true
+                }
+            ]
+        }
+    ]
+}
