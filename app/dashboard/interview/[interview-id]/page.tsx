@@ -23,7 +23,7 @@ export default function InterviewPage() {
 	}
 
 	const { jobPosition, jobDesc, jobExperience } = interviewData;
-
+	console.log("is Enable", isEnabled)
 	return (
 		<div className="min-h-screen bg-[#050408] text-white font-sans relative overflow-hidden">
 			<div

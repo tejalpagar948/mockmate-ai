@@ -8,8 +8,9 @@ import QuestionCard from "@/components/interview/question-card";
 import LiveVideo from "@/components/interview/live-video";
 import useSpeechToText from 'react-hook-speech-to-text';
 import { useUser } from "@clerk/nextjs";
-import db from "@/utils/db";
-import { UserAnswer } from "@/utils/schema";
+import { toast } from "sonner";
+import RecordPanel from "@/components/interview/record-panel";
+import { useRouter } from "next/navigation";
 
 interface InterviewQuestionAnswers {
     question: string;
@@ -23,7 +24,9 @@ export default function StartPage() {
     const [seconds, setSeconds] = useState(0);
     const [userAnswer, setUserAnswer] = useState<string>("");
     const { user } = useUser();
-
+    const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+    const router = useRouter();
+    const [savedAnswerIds, setSavedAnswerIds] = useState<{ [key: number]: number }>({});
     const {
         error,
         interimResult,
@@ -68,13 +71,26 @@ export default function StartPage() {
     };
 
     const handleQuestionChange = (i: number) => {
+        if (isRecording) stopSpeechToText();
         setActiveQ(i);
         setSeconds(0);
     };
 
+    const handlePrevious = () => {
+        if (isRecording) stopSpeechToText();
+        setActiveQ((i) => Math.max(i - 1, 0));
+        setSeconds(0);
+    };
+
     const handleSkip = () => {
+        if (isRecording) stopSpeechToText();
         setActiveQ((i) => Math.min(i + 1, interviewQuestionAnswers.length - 1));
         setSeconds(0);
+    };
+
+    const handleEndInterview = () => {
+        if (isRecording) stopSpeechToText();
+        router.push(`/dashboard/interview/${interviewId}/feedback`);
     };
 
     useEffect(() => {
@@ -85,58 +101,76 @@ export default function StartPage() {
         setUserAnswer(answer);
     }, [results]);
 
+
     const handleRecord = async () => {
         if (isRecording) {
             stopSpeechToText();
             if (userAnswer?.length < 10) {
-                alert("Error while saving your answer , Please record again")
-                return
+                toast.error("Answer too short. Please record at least a few sentences.");
+                return;
             }
-            const feedbackPrompt = `Question : ${interviewQuestion} , UserAnswer : ${userAnswer} , Depends on question and user answer please give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in JSON format with rating field and feedback field`
+            setIsSubmittingAnswer(true);
             try {
                 const result = await fetch('/api/generate-feedback', {
                     method: 'POST',
-                    headers: {
-                        "content-type": "application/json"
-                    },
+                    headers: { "content-type": "application/json" },
                     body: JSON.stringify({
                         question: interviewQuestion,
                         userAnswer: userAnswer
                     })
-                })
+                });
 
                 if (!result.ok) {
-                    alert("Error while generating feedback")
-                    return
+                    toast.error("Couldn't generate feedback. Please try again.");
+                    return;
                 }
-                const json = await result.json()
-                console.log(json?.result)
+
+                const json = await result.json();
                 const feedbackJsonResponse = json.result.replace('```json', '').replace('```', '').trim();
                 const parsedFeedback = JSON.parse(feedbackJsonResponse);
-                console.log(parsedFeedback);
-                const resp = await db.insert(UserAnswer).values({
-                    mockIdRef: interviewId,
-                    question: interviewQuestion,
-                    correctAnswer: interviewQuestionAnswers[activeQ]?.answer,
-                    userAnswer: userAnswer,
-                    feedback: parsedFeedback.feedback,
-                    rating: parsedFeedback.rating,
-                    userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
-                    createdAt: new Date()
-                })
-                console.log(resp)
+
+                // ✅ ab DB call yaha nahi, /api/save-answer route ko call karenge
+                const saveResult = await fetch('/api/save-answer', {
+                    method: 'POST',
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        mockIdRef: interviewId,
+                        question: interviewQuestion,
+                        correctAnswer: interviewQuestionAnswers[activeQ]?.answer,
+                        userAnswer: userAnswer,
+                        feedback: parsedFeedback.feedback,
+                        rating: parsedFeedback.rating,
+                        userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
+                        existingAnswerId: savedAnswerIds[activeQ] ?? null
+                    })
+                });
+
+                if (!saveResult.ok) {
+                    toast.error("Couldn't save your answer. Please try again.");
+                    return;
+                }
+
+                const saveJson = await saveResult.json();
+
+                // ✅ agar pehle se answer saved hai to update, warna insert (id route se aayi)
+                const wasUpdate = Boolean(savedAnswerIds[activeQ]);
+                setSavedAnswerIds(prev => ({ ...prev, [activeQ]: saveJson.id }));
+                toast.success(wasUpdate ? "Answer updated successfully!" : "Answer saved successfully!");
+
             } catch (err) {
-                alert("Error while generating feedback" + err)
+                console.error("handleRecord error:", err);
+                toast.error("Something went wrong while saving your answer.");
+            } finally {
+                setIsSubmittingAnswer(false);
             }
 
         } else {
+            // start ya re-record — dono same hi hai
             setResults([]);
             setUserAnswer("");
             startSpeechToText();
         }
     };
-
-    console.log(interviewData, interviewId)
 
     return (
         <div className="min-h-screen bg-[#050408] text-white font-sans relative overflow-hidden">
@@ -148,7 +182,7 @@ export default function StartPage() {
                 }}
             />
 
-            <main className="relative max-w-6xl mx-auto px-6 py-8">
+            <main className="relative max-w-6xl mx-auto py-8">
                 {/* Session header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
@@ -179,6 +213,8 @@ export default function StartPage() {
                         <QuestionCard
                             question={interviewQuestion}
                             onSkip={handleSkip}
+                            userAnswer={userAnswer}
+                            interimResult={interimResult}
                             isLastQuestion={activeQ === interviewQuestionAnswers.length - 1}
                         />
                     </div>
@@ -215,41 +251,22 @@ export default function StartPage() {
                             )}
                         </div>
 
-                        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                            <p className="text-xs text-gray-500 mb-3">
-                                {isRecording ? "Listening…" : "Your answer will appear here"}
-                            </p>
-                            <div className="flex items-center gap-1 h-8">
-                                {Array.from({ length: 40 }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`flex-1 rounded-full transition-all duration-300 ${isRecording ? "bg-violet-500" : "bg-white/10"
-                                            }`}
-                                        style={{
-                                            height: isRecording ? `${20 + Math.sin(i * 0.7 + seconds) * 60 + 20}%` : "15%",
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleRecord}
-                            className={`flex items-center justify-center gap-2 rounded-full py-3.5 font-medium text-[15px] transition-colors ${isRecording
-                                ? "bg-white/10 text-white hover:bg-white/15"
-                                : "bg-violet-600 text-white hover:bg-violet-500"
-                                }`}
-                        >
-                            <Mic size={17} />
-                            {isRecording ? "Stop Recording" : "Record Answer"}
-                        </button>
-                        <p className="text-white whitespace-pre-wrap">
-                            {userAnswer}
-                            {interimResult && ` ${interimResult}`}
-                        </p>
-                        <button onClick={() => console.log(userAnswer)}>click</button>
+                        <RecordPanel
+                            isRecording={isRecording}
+                            isSubmittingAnswer={isSubmittingAnswer}
+                            seconds={seconds}
+                            userAnswer={userAnswer}
+                            interimResult={interimResult}
+                            onRecord={handleRecord}
+                            onPrevious={handlePrevious}
+                            onNext={handleSkip}
+                            onEndInterview={handleEndInterview}
+                            hasPrevious={activeQ > 0}
+                            hasNext={activeQ < interviewQuestionAnswers.length - 1}
+                        />
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
