@@ -10,7 +10,6 @@ export async function POST(req: Request) {
         const { question, userAnswer } = await req.json();
         const prompt = `Question : ${question} , UserAnswer : ${userAnswer} , Depends on question and user answer please give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in JSON format with rating field and feedback field`
 
-
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [{ role: "user", parts: [{ text: prompt }] }],
