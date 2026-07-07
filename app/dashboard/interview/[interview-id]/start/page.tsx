@@ -19,7 +19,7 @@ interface InterviewQuestionAnswers {
 
 export default function StartPage() {
     const { interviewData, loading, interviewId } = useInterview();
-    const { isEnabled, isReady, enableCamera } = useWebcam();
+    const { isEnabled, isReady, enableCamera, disableCamera } = useWebcam();
     const [activeQ, setActiveQ] = useState(0);
     const [seconds, setSeconds] = useState(0);
     const [userAnswer, setUserAnswer] = useState<string>("");
@@ -90,12 +90,13 @@ export default function StartPage() {
 
     const handleEndInterview = () => {
         if (isRecording) stopSpeechToText();
+        disableCamera();
         router.push(`/dashboard/interview/${interviewId}/feedback`);
     };
 
     useEffect(() => {
         const answer = results
-            .map((result) => result.transcript)
+            .map((result) => typeof result === "string" ? result : result.transcript)
             .join(" ");
 
         setUserAnswer(answer);

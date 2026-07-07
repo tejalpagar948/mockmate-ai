@@ -1,13 +1,12 @@
 "use client";
 
-import { ReactNode } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface NavControlButtonProps {
     label: string;
     icon: LucideIcon;
     iconPosition?: "left" | "right";
-    onClick: () => void;    
+    onClick: () => void;
     disabled?: boolean;
     variant?: "default" | "end";
 }
