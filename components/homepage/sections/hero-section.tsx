@@ -4,16 +4,16 @@ import { useState } from 'react';
 import { Play, ArrowRight, Sparkles } from 'lucide-react';
 import DemoCard from '../elements/democard';
 import type { DemoTab } from '../utils/types';
-import { useInterview } from '@/app/context/interview-modal-context';
+import { useInterviewModal } from '@/app/context/interview-modal-context';
 
 export default function HeroSection() {
   // ← no props
   const [activeTab, setActiveTab] = useState<DemoTab>('behavioral');
-  const { openModal } = useInterview();
+  const { openModal } = useInterviewModal();
 
   return (
-    <section className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-20 lg:px-8 lg:pt-24">
-      <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-10">
+    <section className="relative z-10 mx-auto max-w-7xl px-6 pt-12 pb-16 md:pt-16 md:pb-20 lg:px-8 lg:pt-24">
+      <div className="grid items-center gap-10 md:gap-14 lg:grid-cols-2 lg:gap-10">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-violet-300">
             <Sparkles className="h-3.5 w-3.5" />
