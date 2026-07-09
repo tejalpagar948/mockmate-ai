@@ -9,7 +9,7 @@ const STEPS = [
 
 export default function ProcessStrip() {
   return (
-    <section className="relative z-10 mx-auto max-w-7xl px-6 py-12 lg:px-8">
+    <section className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:py-12 lg:px-8" id='process'>
       <div className="rounded-3xl border border-white/5 bg-gradient-to-br from-[#15101F] to-[#0E0B17] p-8 sm:p-10">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
           {STEPS.map((step, i) => (
