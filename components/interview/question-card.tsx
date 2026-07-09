@@ -1,6 +1,7 @@
 "use client"
 
 import { Volume2, Check, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
 
 interface QuestionCardProps {
     question: string;
@@ -11,6 +12,18 @@ interface QuestionCardProps {
 }
 
 export default function QuestionCard({ question, onSkip, userAnswer, interimResult, isLastQuestion }: QuestionCardProps) {
+
+    const SPEECH_DELAY_MS = 900;
+
+    useEffect(() => {
+        if (!question) return;
+        window.speechSynthesis.cancel();
+        const timer = setTimeout(() => textToSpeech(question), SPEECH_DELAY_MS);
+        return () => {
+            clearTimeout(timer);
+            window.speechSynthesis.cancel();
+        };
+    }, [question]);
 
     const textToSpeech = (text: string) => {
         if ('speechSynthesis' in window) {
@@ -56,7 +69,7 @@ export default function QuestionCard({ question, onSkip, userAnswer, interimResu
                     YOUR ANSWER
                 </p>
                 <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap">
-                    {userAnswer}
+                    {userAnswer || ''}
                     {interimResult && ` ${interimResult}`}
                 </p>
             </div>
@@ -64,7 +77,7 @@ export default function QuestionCard({ question, onSkip, userAnswer, interimResu
             {!isLastQuestion && (
                 <button
                     onClick={onSkip}
-                    className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors"
+                    className="ml-auto flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors"
                 >
                     Skip to next question
                     <ChevronRight size={15} />
