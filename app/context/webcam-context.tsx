@@ -8,7 +8,8 @@ import {
     useRef,
     useEffect,
 } from "react";
-import { toast } from "sonner"
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 interface WebcamContextType {
     stream: MediaStream | null;
@@ -29,11 +30,16 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
 
     const streamRef = useRef<MediaStream | null>(null);
 
+    const pathname = usePathname();
+    const isFeedbackPage = pathname?.endsWith("/feedback");
+
     const enableCamera = useCallback(async () => {
         if (
             streamRef.current &&
             streamRef.current.active &&
-            streamRef.current.getTracks().every(track => track.readyState === "live")
+            streamRef.current.getTracks().every(
+                (track) => track.readyState === "live"
+            )
         ) {
             setIsEnabled(true);
             setIsReady(true);
@@ -41,7 +47,7 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
             setStream(null);
         }
@@ -54,14 +60,13 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
                 audio: true,
             });
 
-            // Detect mid-session permission revoke
-            mediaStream.getTracks().forEach(track => {
+            mediaStream.getTracks().forEach((track) => {
                 track.onended = () => {
                     streamRef.current = null;
                     setStream(null);
                     setIsEnabled(false);
                     setIsReady(false);
-                    localStorage.removeItem("cameraEnabled");
+                    sessionStorage.removeItem("cameraEnabled");
                 };
             });
 
@@ -70,7 +75,7 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
             setIsEnabled(true);
             setIsReady(true);
 
-            localStorage.setItem("cameraEnabled", "true");
+            sessionStorage.setItem("cameraEnabled", "true");
         } catch (err) {
             console.error(err);
 
@@ -86,9 +91,10 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
             setIsReady(false);
             setError("Camera/mic access denied");
 
-            localStorage.removeItem("cameraEnabled");
+            sessionStorage.removeItem("cameraEnabled");
         }
     }, []);
+
     const disableCamera = useCallback(() => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
 
@@ -97,18 +103,28 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         setIsEnabled(false);
         setIsReady(false);
 
-        localStorage.removeItem("cameraEnabled");
+        sessionStorage.removeItem("cameraEnabled");
     }, []);
 
+    // Camera should never stay active on feedback page
     useEffect(() => {
+        if (isFeedbackPage) {
+            disableCamera();
+        }
+    }, [isFeedbackPage, disableCamera]);
+
+    // Restore camera only on interview pages (not feedback)
+    useEffect(() => {
+        if (isFeedbackPage) return;
+
         const autoEnableCamera = async () => {
-            const shouldEnable = localStorage.getItem("cameraEnabled");
+            const shouldEnable = sessionStorage.getItem("cameraEnabled");
 
             if (shouldEnable === "true") {
                 try {
                     await enableCamera();
                 } catch {
-                    localStorage.removeItem("cameraEnabled");
+                    sessionStorage.removeItem("cameraEnabled");
                 }
             }
         };
@@ -119,7 +135,7 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
             streamRef.current?.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
         };
-    }, [enableCamera]);
+    }, [enableCamera, isFeedbackPage]);
 
     return (
         <WebcamContext.Provider
