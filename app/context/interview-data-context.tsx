@@ -1,66 +1,65 @@
-"use client"
-import { createContext, useContext, useEffect, useState } from "react"
-import db from "@/utils/db"
-import { eq } from "drizzle-orm"
-import { mockInterview } from "@/utils/schema"
+"use client";
+
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    ReactNode,
+} from "react";
 
 export interface InterviewData {
-    jobPosition: string
-    jobDesc: string
-    jobExperience: string
-    jsonMockResp: string
+    jobPosition: string;
+    jobDesc: string;
+    jobExperience: string;
+    jsonMockResp: string;
 }
 
 interface InterviewContextType {
-    interviewData: InterviewData | null
-    loading: boolean
-    interviewId: string
+    interviewData: InterviewData | null;
+    loading: boolean;
+    interviewId: string;
+    refetchInterview: () => Promise<void>;
 }
 
-const InterviewDataContext = createContext<InterviewContextType>({
-    interviewData: null,
-    loading: true,
-    interviewId: "",
-})
+const InterviewDataContext = createContext<InterviewContextType | undefined>(
+    undefined
+);
+
+interface InterviewDataProviderProps {
+    interviewId: string;
+    initialData: InterviewData | null;
+    children: ReactNode;
+}
 
 export function InterviewDataProvider({
     interviewId,
+    initialData,
     children,
-}: {
-    interviewId: string
-    children: React.ReactNode
-}) {
-    const [interviewData, setInterviewData] = useState<InterviewData | null>(null)
-    const [loading, setLoading] = useState(true)
+}: InterviewDataProviderProps) {
+    const [interviewData, setInterviewData] = useState<InterviewData | null>(initialData);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!interviewId) {
-            setLoading(false);
-            return;
-        }
-        const fetchInterview = async () => {
-            setLoading(true)
-            try {
-                const result = await db
-                    .select()
-                    .from(mockInterview)
-                    .where(eq(mockInterview.mockId, interviewId))
-                setInterviewData(result[0] as InterviewData)
-            } catch (err) {
-                console.error("Failed to fetch interview:", err)
-            } finally {
-                setLoading(false)
-            }
-        }
+        setInterviewData(initialData);
+    }, [initialData]);
 
-        fetchInterview()
-    }, [interviewId])
+    const refetchInterview = async () => {
+        // No-op as fetching is handled server-side at layout level
+    };
 
     return (
-        <InterviewDataContext.Provider value={{ interviewData, loading, interviewId }}>
+        <InterviewDataContext.Provider
+            value={{
+                interviewData,
+                loading,
+                interviewId,
+                refetchInterview,
+            }}
+        >
             {children}
         </InterviewDataContext.Provider>
-    )
+    );
 }
 
 export function useInterview() {
