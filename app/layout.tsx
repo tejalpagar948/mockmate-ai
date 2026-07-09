@@ -2,6 +2,13 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import HideClerkBranding from '@/components/clerkUI/HideClerkBranding';
 import { InterviewModalProvider } from '@/app/context/interview-modal-context';
+import { Sora } from "next/font/google";
+import StarField from '@/components/homepage/utils/starfield';
+
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+});
 
 const clerkAppearance = {
   layout: {
@@ -83,17 +90,20 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <head>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap"
-            rel="stylesheet"
-          />
-          <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+          <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         </head>
 
-        <body>
+        <body className={sora.className}>
           <InterviewModalProvider>
             <HideClerkBranding />
-            {children}
+            <div className="relative min-h-screen overflow-hidden bg-[#0B0B14] text-slate-200 antialiased">
+              <StarField />
+              <div className="pointer-events-none fixed inset-0">
+                <div className="absolute -top-32 left-1/2 h-[420px] w-[680px] -translate-x-1/2 rounded-full bg-violet-700/15 blur-3xl" />
+                <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-fuchsia-600/10 blur-3xl" />
+              </div>
+              {children}
+            </div>
           </InterviewModalProvider>
         </body>
       </html>
