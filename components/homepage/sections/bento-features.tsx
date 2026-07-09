@@ -3,7 +3,7 @@ import { BENTO_FEATURES } from '../utils/constants';
 
 export default function BentoFeatures() {
   return (
-    <section className="relative z-10 mx-auto max-w-7xl px-6 py-12 lg:px-8">
+    <section className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:py-12 lg:px-8">
       <div className="max-w-2xl">
         <p className="text-sm font-semibold uppercase tracking-wider text-violet-400">
           Why Mock Mate AI
