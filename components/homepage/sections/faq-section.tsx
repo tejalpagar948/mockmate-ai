@@ -10,7 +10,7 @@ export default function FaqSection() {
   return (
     <section
       id="faq"
-      className="relative z-10 mx-auto max-w-3xl px-6 py-16 lg:px-8">
+      className="relative z-10 mx-auto max-w-3xl px-6 py-12 md:py-16 lg:px-8">
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-wider text-violet-400">
           FAQ
