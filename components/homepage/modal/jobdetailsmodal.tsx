@@ -62,7 +62,7 @@ export default function JobDetailsModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4">
       {/* backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -70,7 +70,7 @@ export default function JobDetailsModal({
       />
 
       {/* modal */}
-      <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1A1428] to-[#0F0B17] shadow-2xl shadow-violet-950/50">
+      <div className="relative flex h-full sm:max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1A1428] to-[#0F0B17] shadow-2xl shadow-violet-950/50">
         {/* decorative glow */}
         <div className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-violet-600/20 blur-3xl" />
 
@@ -86,7 +86,7 @@ export default function JobDetailsModal({
                 Tell us about the job
               </h2>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-slate-400 hidden md:block">
                 We'll tailor your mock interview to match the role.
               </p>
             </div>
@@ -159,11 +159,10 @@ export default function JobDetailsModal({
                   key={option}
                   type="button"
                   onClick={() => setYearsOfExperience(option)}
-                  className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
-                    yearsOfExperience === option
-                      ? 'border-violet-500/50 bg-violet-600/20 text-violet-200'
-                      : 'border-white/10 bg-black/20 text-slate-400 hover:border-white/20 hover:text-white'
-                  }`}>
+                  className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${yearsOfExperience === option
+                    ? 'border-violet-500/50 bg-violet-600/20 text-violet-200'
+                    : 'border-white/10 bg-black/20 text-slate-400 hover:border-white/20 hover:text-white'
+                    }`}>
                   {option}
                 </button>
               ))}
