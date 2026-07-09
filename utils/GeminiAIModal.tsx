@@ -19,7 +19,7 @@ async function main() {
     },
     tools,
   };
-  const model = 'gemini-3-flash-preview';
+  const model = 'gemini-2.5-flash';
   const contents = [
     {
       role: 'user',
