@@ -78,8 +78,6 @@ export function InterviewCard({
   useEffect(() => {
     GetUserAnswerList();
   }, []);
-  console.log("userAnswer", userAnswer)
-
   return (
     <div className={`bg-[#12121a] border border-white/[0.07] rounded-xl ${padding} cursor-pointer hover:border-violet-500/30 transition-all`}>
       <Link
