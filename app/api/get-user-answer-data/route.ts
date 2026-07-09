@@ -1,5 +1,3 @@
-// app/api/get-feedback/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/utils/db";
 import { UserAnswer } from "@/utils/schema";
