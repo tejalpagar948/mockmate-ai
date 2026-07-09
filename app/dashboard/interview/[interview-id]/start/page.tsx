@@ -1,7 +1,7 @@
 "use client"
 import { useInterview } from "@/app/context/interview-data-context";
 import { useWebcam } from "@/app/context/webcam-context";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useTransition } from "react";
 import { Circle, Mic, Video, WebcamIcon } from "lucide-react";
 import QuestionTabs from "@/components/interview/question-tabs";
 import QuestionCard from "@/components/interview/question-card";
@@ -11,6 +11,7 @@ import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import RecordPanel from "@/components/interview/record-panel";
 import { useRouter } from "next/navigation";
+import { startTransition } from "react";
 
 interface InterviewQuestionAnswers {
     question: string;
@@ -27,6 +28,8 @@ export default function StartPage() {
     const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
     const router = useRouter();
     const [savedAnswerIds, setSavedAnswerIds] = useState<{ [key: number]: number }>({});
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [isPending, startTransition] = useTransition();
     const {
         error,
         interimResult,
@@ -40,16 +43,21 @@ export default function StartPage() {
         useLegacyResults: false
     });
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-
     const interviewQuestionAnswers = useMemo<InterviewQuestionAnswers[]>(() => {
-        return interviewData?.jsonMockResp
-            ? JSON.parse(interviewData.jsonMockResp).map((item: any) => ({
-                question: item.Question,
-                answer: item.Answer,
-            }))
-            : [];
-    }, [interviewData?.jsonMockResp]);
+        if (!interviewData?.jsonMockResp) return [];
+
+        try {
+            const parsed = JSON.parse(interviewData.jsonMockResp);
+
+            return parsed.questions.map((item: any) => ({
+                question: item.question,
+                answer: item.answer,
+            }));
+        } catch (error) {
+            console.error("Failed to parse interview questions:", error);
+            return [];
+        }
+    }, [interviewData]);
 
     const interviewQuestion = interviewQuestionAnswers[activeQ]?.question ?? "";
 
@@ -83,15 +91,21 @@ export default function StartPage() {
     };
 
     const handleSkip = () => {
+        setUserAnswer('');
+        setSeconds(0);
         if (isRecording) stopSpeechToText();
         setActiveQ((i) => Math.min(i + 1, interviewQuestionAnswers.length - 1));
-        setSeconds(0);
     };
 
     const handleEndInterview = () => {
+        // 1. Turant navigation trigger karo — highest priority
+        startTransition(() => {
+            router.push(`/dashboard/interview/${interviewId}/feedback`);
+        });
+
+        // 2. Cleanup ko navigation ke baad, non-blocking tarike se chalao
         if (isRecording) stopSpeechToText();
         disableCamera();
-        router.push(`/dashboard/interview/${interviewId}/feedback`);
     };
 
     useEffect(() => {
@@ -102,7 +116,6 @@ export default function StartPage() {
         setUserAnswer(answer);
     }, [results]);
 
-
     const handleRecord = async () => {
         if (isRecording) {
             stopSpeechToText();
@@ -112,25 +125,6 @@ export default function StartPage() {
             }
             setIsSubmittingAnswer(true);
             try {
-                const result = await fetch('/api/generate-feedback', {
-                    method: 'POST',
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({
-                        question: interviewQuestion,
-                        userAnswer: userAnswer
-                    })
-                });
-
-                if (!result.ok) {
-                    toast.error("Couldn't generate feedback. Please try again.");
-                    return;
-                }
-
-                const json = await result.json();
-                const feedbackJsonResponse = json.result.replace('```json', '').replace('```', '').trim();
-                const parsedFeedback = JSON.parse(feedbackJsonResponse);
-
-                // ✅ ab DB call yaha nahi, /api/save-answer route ko call karenge
                 const saveResult = await fetch('/api/save-answer', {
                     method: 'POST',
                     headers: { "content-type": "application/json" },
@@ -139,10 +133,9 @@ export default function StartPage() {
                         question: interviewQuestion,
                         correctAnswer: interviewQuestionAnswers[activeQ]?.answer,
                         userAnswer: userAnswer,
-                        feedback: parsedFeedback.feedback,
-                        rating: parsedFeedback.rating,
                         userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
                         existingAnswerId: savedAnswerIds[activeQ] ?? null
+                        // feedback, rating bhejne ki zarurat nahi
                     })
                 });
 
@@ -152,11 +145,9 @@ export default function StartPage() {
                 }
 
                 const saveJson = await saveResult.json();
-
-                // ✅ agar pehle se answer saved hai to update, warna insert (id route se aayi)
                 const wasUpdate = Boolean(savedAnswerIds[activeQ]);
                 setSavedAnswerIds(prev => ({ ...prev, [activeQ]: saveJson.id }));
-                toast.success(wasUpdate ? "Answer updated successfully!" : "Answer saved successfully!");
+                toast.success(wasUpdate ? "Answer updated!" : "Answer saved!");
 
             } catch (err) {
                 console.error("handleRecord error:", err);
@@ -164,9 +155,7 @@ export default function StartPage() {
             } finally {
                 setIsSubmittingAnswer(false);
             }
-
         } else {
-            // start ya re-record — dono same hi hai
             setResults([]);
             setUserAnswer("");
             startSpeechToText();
@@ -174,27 +163,19 @@ export default function StartPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#050408] text-white font-sans relative overflow-hidden">
-            <div
-                className="absolute inset-0 opacity-[0.15] pointer-events-none"
-                style={{
-                    backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-                    backgroundSize: "48px 48px",
-                }}
-            />
-
-            <main className="relative max-w-6xl mx-auto py-8">
+        <div className="min-h-screen text-white font-sans relative overflow-hidden">
+            <main className="relative  w-[90%] md:w-full lg:max-w-6xl mx-auto py-8">
                 {/* Session header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-lg font-semibold">
-                            Frontend Engineer <span className="text-gray-500 font-normal">at Mockmate AI</span>
+                            {interviewData?.jobPosition}<span className="text-gray-500 font-normal"> at Mockmate AI</span>
                         </h1>
                         <p className="text-sm text-gray-500 mt-0.5">
                             Question {activeQ + 1} of {interviewQuestionAnswers.length}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
+                    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 hidden md:flex">
                         <Circle
                             size={8}
                             className={isRecording ? "fill-red-500 text-red-500 animate-pulse" : "fill-gray-600 text-gray-600"}
@@ -264,6 +245,7 @@ export default function StartPage() {
                             onEndInterview={handleEndInterview}
                             hasPrevious={activeQ > 0}
                             hasNext={activeQ < interviewQuestionAnswers.length - 1}
+                            isPending={isPending}
                         />
                     </div>
                 </div>
