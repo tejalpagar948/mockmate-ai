@@ -20,7 +20,7 @@ export default function DemoCard({ activeTab, onTabChange }: DemoCardProps) {
           <button
             key={tab}
             onClick={() => onTabChange(tab)}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold capitalize transition-colors sm:text-sm ${
+            className={`flex-1 rounded-lg px-1.5 py-2 text-xs sm:text-sm sm:px-3 font-semibold capitalize transition-colors ${
               activeTab === tab
                 ? 'bg-violet-600 text-white'
                 : 'text-slate-400 hover:text-white'
