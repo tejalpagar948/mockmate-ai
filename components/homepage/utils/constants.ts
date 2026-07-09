@@ -1,7 +1,29 @@
 import { BrainCircuit, MessageSquareText, Code2, Sparkles } from 'lucide-react';
 import type { DemoContent, DemoTab, BentoFeature, FaqItem } from './types';
 
-export const NAV_LINKS = ['Dashboard', 'Questions', 'Upgrade', 'How It Works?'];
+export type NavLink = {
+  label: string;
+  href: string;
+};
+
+export const NAV_LINKS: NavLink[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+  },
+  {
+    label: "Questions",
+    href: "#faq",
+  },
+  {
+    label: "Upgrade",
+    href: "/dashboard/upgrade",
+  },
+  {
+    label: "How It Works?",
+    href: "#process",
+  },
+];
 
 export const DEMO_CONTENT: Record<DemoTab, DemoContent> = {
   behavioral: {
