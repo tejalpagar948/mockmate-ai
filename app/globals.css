@@ -28,18 +28,16 @@ body {
 /* globals.css */
 
 .cl-rootBox {
-  background: radial-gradient(
-    ellipse 80% 60% at 50% 0%,
-    #2a1f5e 0%,
-    #0e0d14 55%
-  ) !important;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%,
+      #2a1f5e 0%,
+      #0e0d14 55%) !important;
 }
 
 .cl-card {
   font-family: 'Sora', sans-serif !important;
 }
 
-.cl-footer > *:last-child {
+.cl-footer>*:last-child {
   display: none !important;
 }
 
@@ -64,4 +62,8 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #a855f7;
+}
+
+.cl-footer {
+  display: none !important;
 }
