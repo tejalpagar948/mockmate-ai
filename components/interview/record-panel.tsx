@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, ChevronLeft, ChevronRight, Square } from "lucide-react";
+import { Mic, ChevronLeft, ChevronRight, Square, Loader2 } from "lucide-react";
 import NavControlButton from "./nav-control-button";
 
 interface RecordPanelProps {
@@ -15,6 +15,7 @@ interface RecordPanelProps {
     onEndInterview: () => void;
     hasPrevious: boolean;
     hasNext: boolean;
+    isPending: boolean;
 }
 
 export default function RecordPanel({
@@ -29,10 +30,11 @@ export default function RecordPanel({
     onEndInterview,
     hasPrevious,
     hasNext,
+    isPending
 }: RecordPanelProps) {
 
     const buttonLabel = (() => {
-        if (isSubmittingAnswer) return "Submitting...";
+        if (isSubmittingAnswer) return "Analyzing your response";
         if (isRecording) return "Stop Recording";
         if (userAnswer.length > 0) return "Re-record Answer";
         return "Record Answer";
@@ -87,8 +89,8 @@ export default function RecordPanel({
                     disabled={!hasNext}
                 />
                 <NavControlButton
-                    label="End Interview"
-                    icon={Square}
+                    label={isPending ? "Ending..." : "End Interview"}
+                    icon={isPending ? Loader2 : Square}
                     onClick={onEndInterview}
                     variant="end"
                     disabled={hasNext}
