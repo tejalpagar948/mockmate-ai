@@ -1,8 +1,14 @@
 import { SignIn } from '@clerk/nextjs';
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ fallbackRedirectUrl?: string }>;
+}) {
+  const { fallbackRedirectUrl } = await searchParams;
+
   return (
-    <main className="relative min-h-dvh flex flex-col items-center justify-center px-4 py-12 overflow-hidden bg-[#0e0d14]">
+    <main className="relative min-h-dvh flex flex-col items-center justify-center px-4 overflow-hidden bg-[#0e0d14]">
       {/* Radial glow */}
       <div
         className="pointer-events-none fixed inset-0 z-0"
@@ -15,19 +21,12 @@ export default function SignInPage() {
       {/* Stars */}
       <Stars />
 
-      {/* Brand */}
-      <div className="relative z-10 flex items-center gap-2.5 mb-7">
-        <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-gradient-to-br from-[#7060f0] to-[#5a4dd6]">
-          <MicIcon />
-        </div>
-        <span className="font-sora font-semibold text-[17px] tracking-tight text-[#f0eeff]">
-          Mock Mate AI
-        </span>
-      </div>
-
       {/* Clerk card */}
       <div className="relative z-10">
-        <SignIn />
+        <SignIn
+          fallbackRedirectUrl={fallbackRedirectUrl}
+          signUpFallbackRedirectUrl={fallbackRedirectUrl}
+        />
       </div>
 
       {/* Sign up link */}
