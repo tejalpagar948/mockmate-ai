@@ -1,4 +1,9 @@
-import { pgTable, serial, text, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+
+export const interviewStatusEnum = pgEnum('interview_status', [
+  'pending',
+  'completed',
+]);
 
 export const mockInterview = pgTable('mockInterview', {
   id: serial('id').primaryKey(),
@@ -6,6 +11,7 @@ export const mockInterview = pgTable('mockInterview', {
   jobPosition: varchar('jobPosition', { length: 255 }).notNull(),
   jobDesc: text('jobDesc').notNull(),
   jobExperience: varchar('jobExperience', { length: 100 }).notNull(),
+  status: interviewStatusEnum('status').default('pending').notNull(),
   createdBy: varchar('createdBy', { length: 255 }).notNull(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   mockId: varchar('mockId', { length: 255 }).notNull().unique(),
