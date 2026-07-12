@@ -15,7 +15,7 @@ interface RecordPanelProps {
     onEndInterview: () => void;
     hasPrevious: boolean;
     hasNext: boolean;
-    isPending: boolean;
+    // isPending: boolean;
 }
 
 export default function RecordPanel({
@@ -30,7 +30,7 @@ export default function RecordPanel({
     onEndInterview,
     hasPrevious,
     hasNext,
-    isPending
+    // isPending
 }: RecordPanelProps) {
 
     const buttonLabel = (() => {
@@ -89,8 +89,10 @@ export default function RecordPanel({
                     disabled={!hasNext}
                 />
                 <NavControlButton
-                    label={isPending ? "Ending..." : "End Interview"}
-                    icon={isPending ? Loader2 : Square}
+                    // label={isPending ? "Ending..." : "End Interview"}
+                    label="End Interview"
+                    // icon={isPending ? Loader2 : Square}
+                    icon={Square}
                     onClick={onEndInterview}
                     variant="end"
                     disabled={hasNext}

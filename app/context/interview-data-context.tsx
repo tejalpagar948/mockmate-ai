@@ -13,6 +13,7 @@ export interface InterviewData {
     jobDesc: string;
     jobExperience: string;
     jsonMockResp: string;
+    status: 'pending' | 'completed';
 }
 
 interface InterviewContextType {

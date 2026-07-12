@@ -1,9 +1,7 @@
 import { InterviewDataProvider } from "@/app/context/interview-data-context";
 import { WebcamProvider } from "@/app/context/webcam-context";
 import { Toaster } from "sonner";
-import db from "@/utils/db";
-import { mockInterview } from "@/utils/schema";
-import { eq } from "drizzle-orm";
+import { getInterviewDetailsAction } from "@/app/actions"; // 1. Import Server Action
 
 export default async function InterviewLayout({
     children,
@@ -14,13 +12,11 @@ export default async function InterviewLayout({
 }) {
     const { "interview-id": interviewId } = await params;
 
-    const [interviewData] = await db
-        .select()
-        .from(mockInterview)
-        .where(eq(mockInterview.mockId, interviewId));
+    // 2. Fetch using Server Action
+    const interviewData = await getInterviewDetailsAction(interviewId);
 
     return (
-        <InterviewDataProvider interviewId={interviewId} initialData={interviewData || null}>
+        <InterviewDataProvider interviewId={interviewId} initialData={interviewData}>
             <WebcamProvider>
                 {children}
                 <Toaster

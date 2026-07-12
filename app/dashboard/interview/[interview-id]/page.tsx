@@ -4,10 +4,17 @@ import { Video, WebcamIcon, ShieldCheck, Briefcase, FileText, Clock, ArrowRight 
 import LiveVideo from "@/components/interview/live-video";
 import Link from "next/link";
 import { useInterview } from "@/app/context/interview-data-context";
+import InterviewCompleted from "@/components/interview/interview-completed";
 
 export default function InterviewPage() {
 	const { interviewData, interviewId } = useInterview()
 	const { isEnabled, isReady, enableCamera } = useWebcam();
+
+	if (interviewData?.status === 'completed') {
+		return (
+			<InterviewCompleted interviewId={interviewId} />
+		)
+	}
 
 	if (!interviewData) {
 		return (

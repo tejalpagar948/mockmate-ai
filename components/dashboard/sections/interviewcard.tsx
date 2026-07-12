@@ -4,6 +4,7 @@ import { MiniBar } from './minibar';
 import { getScoreTextColor, getScoreBgColor } from '../utils/scoreColors';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getUserAnswerDataAction } from '@/app/actions';
 
 export interface Interview {
   id: number;
@@ -65,11 +66,8 @@ export function InterviewCard({
 
   const GetUserAnswerList = async () => {
     try {
-      const response = await fetch("/api/get-user-answer-data");
-      if (response.ok) {
-        const data = await response.json();
-        setUserAnswer(data);
-      }
+      const data = await getUserAnswerDataAction();
+      setUserAnswer(data.map(item => ({ ...item, createdAt: new Date(item.createdAt) })) as any);
     } catch (error) {
       console.error("Error fetching interviews:", error);
     }

@@ -11,7 +11,9 @@ import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import RecordPanel from "@/components/interview/record-panel";
 import { useRouter } from "next/navigation";
-import { startTransition } from "react";
+import { useInterviewModal } from "@/app/context/interview-modal-context";
+// import { startTransition } from "react";
+import { saveAnswerAction, updateInterviewStatusAction } from "@/app/actions";
 
 interface InterviewQuestionAnswers {
     question: string;
@@ -29,7 +31,12 @@ export default function StartPage() {
     const router = useRouter();
     const [savedAnswerIds, setSavedAnswerIds] = useState<{ [key: number]: number }>({});
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const [isPending, startTransition] = useTransition();
+    // const [isPending, startTransition] = useTransition();
+
+    if (interviewData?.status === "completed") {
+        router.push(`/dashboard/interview/${interviewId}/feedback`);
+    }
+
     const {
         error,
         interimResult,
@@ -97,11 +104,20 @@ export default function StartPage() {
         setActiveQ((i) => Math.min(i + 1, interviewQuestionAnswers.length - 1));
     };
 
-    const handleEndInterview = () => {
+    const handleEndInterview = async () => {
+        try {
+            await updateInterviewStatusAction({
+                mockId: interviewId,
+                status: 'completed'
+            });
+        } catch (error) {
+            console.error("Failed to complete interview status:", error);
+        }
+
         // 1. Turant navigation trigger karo — highest priority
-        startTransition(() => {
-            router.push(`/dashboard/interview/${interviewId}/feedback`);
-        });
+        // startTransition(() => {
+        router.push(`/dashboard/interview/${interviewId}/feedback`);
+        // });
 
         // 2. Cleanup ko navigation ke baad, non-blocking tarike se chalao
         if (isRecording) stopSpeechToText();
@@ -119,32 +135,28 @@ export default function StartPage() {
     const handleRecord = async () => {
         if (isRecording) {
             stopSpeechToText();
-            if (userAnswer?.length < 10) {
+            const combinedAnswer = `${userAnswer} ${interimResult || ""}`.trim();
+            if (combinedAnswer.length < 10) {
                 toast.error("Answer too short. Please record at least a few sentences.");
                 return;
             }
+            setUserAnswer(combinedAnswer);
             setIsSubmittingAnswer(true);
             try {
-                const saveResult = await fetch('/api/save-answer', {
-                    method: 'POST',
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({
-                        mockIdRef: interviewId,
-                        question: interviewQuestion,
-                        correctAnswer: interviewQuestionAnswers[activeQ]?.answer,
-                        userAnswer: userAnswer,
-                        userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
-                        existingAnswerId: savedAnswerIds[activeQ] ?? null
-                        // feedback, rating bhejne ki zarurat nahi
-                    })
+                const saveJson = await saveAnswerAction({
+                    mockIdRef: interviewId,
+                    question: interviewQuestion,
+                    correctAnswer: interviewQuestionAnswers[activeQ]?.answer,
+                    userAnswer: combinedAnswer,
+                    userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
+                    existingAnswerId: savedAnswerIds[activeQ] ?? null
                 });
 
-                if (!saveResult.ok) {
+                if (!saveJson || !saveJson.success) {
                     toast.error("Couldn't save your answer. Please try again.");
                     return;
                 }
 
-                const saveJson = await saveResult.json();
                 const wasUpdate = Boolean(savedAnswerIds[activeQ]);
                 setSavedAnswerIds(prev => ({ ...prev, [activeQ]: saveJson.id }));
                 toast.success(wasUpdate ? "Answer updated!" : "Answer saved!");
@@ -245,7 +257,7 @@ export default function StartPage() {
                             onEndInterview={handleEndInterview}
                             hasPrevious={activeQ > 0}
                             hasNext={activeQ < interviewQuestionAnswers.length - 1}
-                            isPending={isPending}
+                        // isPending={isPending}
                         />
                     </div>
                 </div>

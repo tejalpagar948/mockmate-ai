@@ -1,15 +1,12 @@
 // context/InterviewModalContext.tsx
 'use client';
-import { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import JobDetailsModal, {
   JobDetails,
 } from '@/components/homepage/modal/jobdetailsmodal';
-import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '@clerk/nextjs';
-import db from '@/utils/db';
-import { mockInterview } from '@/utils/schema';
-import { NextResponse } from "next/server"
+import { sendFormInputsAction } from '@/app/actions';
 
 const InterviewModalContext = createContext<{
   openModal: () => void;
@@ -52,44 +49,20 @@ export function InterviewModalProvider({
   const handleStartInterview = async (details: JobDetails) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/send-form-inputs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jobRole: details.jobPosition,
-          experience: details.yearsOfExperience,
-          jobDescription: details.skills,
-        }),
+      const data = await sendFormInputsAction({
+        jobRole: details.jobPosition,
+        experience: details.yearsOfExperience,
+        jobDescription: details.skills,
+        userEmail: user?.primaryEmailAddress?.emailAddress ?? '',
       });
 
-      if (!res.ok) {
-        throw new Error(`Server returned status ${res.status}`);
+      if (!data || !data.success || !data.mockId) {
+        throw new Error('Invalid response from the server.');
       }
 
-      const data = await res.json();
-      if (!data || typeof data.result !== 'string') {
-        throw new Error(data?.error || 'Invalid response from the server.');
-      }
-
-      const MockJsonResponse = data.result.replace('```json', '').replace('```', '').trim();
-      setJsonResponse(MockJsonResponse);
-
-      if (MockJsonResponse) {
-        const resp = await db.insert(mockInterview).values({
-          mockId: uuidv4(),
-          jsonMockResp: MockJsonResponse,
-          jobPosition: details.jobPosition,
-          jobDesc: details.skills,
-          jobExperience: details.yearsOfExperience,
-          createdBy: user?.primaryEmailAddress?.emailAddress ?? '',
-          createdAt: new Date(),
-        }).returning({ mockId: mockInterview.mockId });
-        if (resp) {
-          router.push(`/dashboard/interview/${resp[0].mockId}`);
-          return; // Do not clear loading state on success, it will clear on pathname change
-        }
-      }
-      setLoading(false);
+      setJsonResponse(data.jsonMockResp);
+      router.push(`/dashboard/interview/${data.mockId}`);
+      return; // Do not clear loading state on success, it will clear on pathname change
 
     } catch (error: any) {
       console.error(error);
@@ -119,7 +92,6 @@ export function InterviewModalProvider({
     }
   };
 
-  console.log("jsonResponse", jsonResponse)
   return (
     <InterviewModalContext.Provider value={{ openModal, jsonResponse }}>
       {children}
