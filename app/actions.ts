@@ -246,13 +246,16 @@ export async function updateInterviewStatusAction(params: {
 // 6. Get single mock interview details
 export async function getInterviewDetailsAction(mockId: string) {
     try {
-        console.log("getInterviewDetailsAction called with mockId:", mockId);
+        const user = await currentUser();
+        const email = user?.primaryEmailAddress?.emailAddress;
+
+        if (!email) {
+            throw new Error("Unauthorized");
+        }
         const data = await db
             .select()
             .from(mockInterview)
             .where(eq(mockInterview.mockId, mockId));
-
-        console.log("getInterviewDetailsAction query data:", data);
 
         if (!data || data.length === 0) {
             return null;
