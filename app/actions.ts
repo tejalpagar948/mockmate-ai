@@ -7,7 +7,7 @@ import { UserAnswer, mockInterview } from "@/utils/schema";
 import { eq, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // 1. Send form inputs (Generate questions from AI + save mock interview to DB)
 export async function sendFormInputsAction(params: {
