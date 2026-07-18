@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Briefcase,
@@ -59,10 +59,70 @@ export default function JobDetailsModal({
     });
   };
 
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Escape key listener
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  // Focus trap listener
+  useEffect(() => {
+    if (!open) return;
+    const container = modalRef.current;
+    if (!container) return;
+
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusableElements = container.querySelectorAll(focusableSelector);
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    // Auto-focus the first element when opening
+    setTimeout(() => {
+      firstElement.focus();
+    }, 50);
+
+    const handleTabKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    container.addEventListener('keydown', handleTabKeyDown);
+    return () => {
+      container.removeEventListener('keydown', handleTabKeyDown);
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4">
+    <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4">
       {/* backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -148,7 +208,9 @@ export default function JobDetailsModal({
           {/* Experience */}
 
           <div>
-            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+            <label
+              htmlFor="customYearsExperience"
+              className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
               <Clock className="h-4 w-4 text-violet-400" />
               Years of experience
             </label>
@@ -169,7 +231,7 @@ export default function JobDetailsModal({
             </div>
 
             <input
-              id="yearsOfExperience"
+              id="customYearsExperience"
               type="text"
               value={yearsOfExperience}
               onChange={(e) => setYearsOfExperience(e.target.value)}
