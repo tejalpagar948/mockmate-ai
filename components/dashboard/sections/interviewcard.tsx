@@ -1,10 +1,6 @@
 // components/dashboard/InterviewCard.tsx
 "use client"
-import { MiniBar } from './minibar';
-import { getScoreTextColor, getScoreBgColor } from '../utils/scoreColors';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getUserAnswerDataAction } from '@/app/actions';
 
 export interface Interview {
   id: number;
@@ -59,23 +55,9 @@ export function InterviewCard({
 
   const padding = variant === 'full' ? 'p-5' : 'p-4';
 
-  const [userAnswer, setUserAnswer] = useState<UserAnswer[]>([]);
-
   //  const textColor = getScoreTextColor(score);
   // const bgColor = getScoreBgColor(score);
 
-  const GetUserAnswerList = async () => {
-    try {
-      const data = await getUserAnswerDataAction();
-      setUserAnswer(data.map(item => ({ ...item, createdAt: new Date(item.createdAt) })) as any);
-    } catch (error) {
-      console.error("Error fetching interviews:", error);
-    }
-  };
-
-  useEffect(() => {
-    GetUserAnswerList();
-  }, []);
   return (
     <div className={`bg-[#12121a] border border-white/[0.07] rounded-xl ${padding} cursor-pointer hover:border-violet-500/30 transition-all`}>
       <Link

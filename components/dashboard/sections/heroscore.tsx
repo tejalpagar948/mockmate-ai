@@ -1,13 +1,14 @@
 // components/dashboard/HeroScore.tsx
+"use client"
 import { useInterviewModal } from '@/app/context/interview-modal-context';
 
 interface HeroScoreProps {
   score: number;
-  maxScore?: number; // ✅ default 100, feedback page mein 10 pass karenge
-  userName: string; // ✅ ye heading ki jagah use hoga
-  greeting?: string; // ✅ "Welcome back," ki jagah "Interview complete" jaisa custom text
+  maxScore?: number; 
+  userName: string; 
+  greeting?: string; 
   subtitle?: string;
-  showNewInterviewButton?: boolean; // ✅ feedback page pe hide karenge
+  showNewInterviewButton?: boolean; 
 }
 
 export function HeroScore({
@@ -73,7 +74,7 @@ export function HeroScore({
           <p className="text-white/40 text-sm mb-4">{subtitle}</p>
         </div>
 
-        {/* CTA — sirf tab dikhega jab showNewInterviewButton true hai */}
+        {/* CTA — only visible if showNewInterviewButton is true */}
         {showNewInterviewButton && (
           <button
             onClick={openModal}

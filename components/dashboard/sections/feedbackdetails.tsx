@@ -70,7 +70,7 @@ export default function FeedbackDetails({
                 {bestQuestion && (
                     <button
                         onClick={() => setExpandedId(bestQuestion.id)}
-                        className={`text-left bg-[#12121a] hover:border-red-500/40 hover:-translate-y-0.5 rounded-2xl p-5 transition-all duration-500 opacity-100 translate-y-0`}
+                        className={`text-left bg-[#12121a] hover:border-emerald-500/40 hover:-translate-y-0.5 rounded-2xl p-5 transition-all duration-500 opacity-100 translate-y-0`}
                         style={{ transitionDelay: mounted ? "200ms" : "0ms" }}
                     >
                         <div className="flex items-center gap-2 mb-2">
