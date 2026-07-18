@@ -24,7 +24,7 @@ export default function LiveVideo({ className }: LiveVideoProps) {
             muted
             playsInline
             className={className}
-            style={{ transform: "scaleX(-1)" }} // mirrored, jaisa react-webcam mein tha
+            style={{ transform: "scaleX(-1)" }} // mirrored, as it was in react-webcam
         />
     );
 }

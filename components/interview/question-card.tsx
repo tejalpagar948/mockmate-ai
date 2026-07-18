@@ -2,6 +2,7 @@
 
 import { Volume2, Check, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface QuestionCardProps {
     question: string;
@@ -30,7 +31,7 @@ export default function QuestionCard({ question, onSkip, userAnswer, interimResu
             const speech = window.speechSynthesis;
             speech.speak(new SpeechSynthesisUtterance(text));
         } else {
-            alert("Your browser does not support text to speech")
+            toast.error("Your browser does not support text to speech");
         }
     }
 

@@ -2,6 +2,7 @@
 
 import { Check, FileBarChart2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useInterview } from "@/app/context/interview-data-context";
 
 interface InterviewCompletedProps {
     role?: string;
@@ -11,12 +12,16 @@ interface InterviewCompletedProps {
 }
 
 export default function InterviewCompleted({
-    role = "Frontend developer",
+    role,
     totalQuestions = 5,
     duration = "12m 40s",
     interviewId,
 }: InterviewCompletedProps) {
     const router = useRouter();
+    const { interviewData } = useInterview();
+    
+    const displayRole = role || interviewData?.jobPosition || "Frontend developer";
+
 
     const handleViewFeedback = () => {
         router.push(`/dashboard/interview/${interviewId}/feedback`);
@@ -48,7 +53,7 @@ export default function InterviewCompleted({
                 <div className="w-full max-w-sm bg-white/[0.03] border border-white/[0.08] rounded-xl px-5 py-4 flex justify-between">
                     <div className="text-left">
                         <p className="text-gray-500 text-xs mb-1">Role</p>
-                        <p className="text-white text-sm font-medium">{role}</p>
+                        <p className="text-white text-sm font-medium">{displayRole}</p>
                     </div>
                     <div className="text-left">
                         <p className="text-gray-500 text-xs mb-1">Questions</p>
