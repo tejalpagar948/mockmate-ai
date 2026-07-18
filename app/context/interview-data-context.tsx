@@ -3,9 +3,9 @@
 import {
     createContext,
     useContext,
-    useEffect,
     useState,
     ReactNode,
+    useMemo
 } from "react";
 
 export interface InterviewData {
@@ -13,14 +13,13 @@ export interface InterviewData {
     jobDesc: string;
     jobExperience: string;
     jsonMockResp: string;
-    status: 'pending' | 'completed';
+    status: "pending" | "completed";
 }
 
 interface InterviewContextType {
     interviewData: InterviewData | null;
     loading: boolean;
     interviewId: string;
-    refetchInterview: () => Promise<void>;
 }
 
 const InterviewDataContext = createContext<InterviewContextType | undefined>(
@@ -38,26 +37,20 @@ export function InterviewDataProvider({
     initialData,
     children,
 }: InterviewDataProviderProps) {
-    const [interviewData, setInterviewData] = useState<InterviewData | null>(initialData);
+    const [interviewData, setInterviewData] =
+        useState<InterviewData | null>(initialData);
+
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        setInterviewData(initialData);
-    }, [initialData]);
-
-    const refetchInterview = async () => {
-        // No-op as fetching is handled server-side at layout level
-    };
+    const contextValue = useMemo(() => ({
+        interviewData,
+        loading,
+        interviewId,
+    }), [interviewData, loading, interviewId]);
 
     return (
         <InterviewDataContext.Provider
-            value={{
-                interviewData,
-                loading,
-                interviewId,
-                refetchInterview,
-            }}
-        >
+            value={contextValue}>
             {children}
         </InterviewDataContext.Provider>
     );

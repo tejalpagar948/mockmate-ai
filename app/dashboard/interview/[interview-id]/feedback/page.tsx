@@ -2,7 +2,7 @@
 import Navbar from '@/components/homepage/sections/navbar';
 import Footer from '@/components/homepage/sections/footer';
 import FeedbackContent from "./feedback-content";
-import { generateFeedbackBatchAction } from "@/app/actions"; // adjust path
+import { getFeedback } from "@/utils/queries";
 
 export default async function FeedbackPage({
     params,
@@ -11,7 +11,7 @@ export default async function FeedbackPage({
 }) {
     const { "interview-id": interviewId } = await params;
 
-    const { results } = await generateFeedbackBatchAction({ mockIdRef: interviewId });
+    const results = await getFeedback(interviewId);
 
     const feedbackList = results.map((item) => ({
         id: item.id,

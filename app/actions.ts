@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { currentUser } from "@clerk/nextjs/server";
 import db from "@/utils/db";
 import { UserAnswer, mockInterview } from "@/utils/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -14,10 +14,15 @@ export async function sendFormInputsAction(params: {
     jobRole: string;
     experience: string;
     jobDescription: string;
-    userEmail: string;
 }) {
     try {
-        const { jobRole, experience, jobDescription, userEmail } = params;
+        const user = await currentUser();
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+
+        if (!userEmail) {
+            throw new Error("Unauthorized");
+        }
+        const { jobRole, experience, jobDescription } = params;
 
         const InputPrompt = `Generate exactly 5 interview questions.
 Role: ${jobRole}
@@ -98,7 +103,6 @@ export async function saveAnswerAction(params: {
     userAnswer?: string | null;
     feedback?: string | null;
     rating?: string | null;
-    userEmail?: string | null;
     existingAnswerId?: number | null;
 }) {
     try {
@@ -109,9 +113,15 @@ export async function saveAnswerAction(params: {
             userAnswer,
             feedback,
             rating,
-            userEmail,
             existingAnswerId
         } = params;
+
+        const user = await currentUser();
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+
+        if (!userEmail) {
+            throw new Error("Unauthorized");
+        }
 
         const payload = {
             mockIdRef,
@@ -125,13 +135,37 @@ export async function saveAnswerAction(params: {
         };
 
         if (existingAnswerId) {
+            const existing = await db
+                .select()
+                .from(UserAnswer)
+                .where(eq(UserAnswer.id, existingAnswerId));
+
+            if (!existing || existing.length === 0 || existing[0].userEmail !== userEmail) {
+                throw new Error("Not found or access denied");
+            }
+
             await db.update(UserAnswer)
                 .set(payload)
                 .where(eq(UserAnswer.id, existingAnswerId));
 
             return { success: true, id: existingAnswerId };
         } else {
-            const resp = await db.insert(UserAnswer)
+            const interview = await db
+                .select()
+                .from(mockInterview)
+                .where(
+                    and(
+                        eq(mockInterview.mockId, mockIdRef),
+                        eq(mockInterview.createdBy, userEmail)
+                    )
+                );
+
+            if (interview.length === 0) {
+                throw new Error("Interview not found or access denied");
+            }
+
+            const resp = await db
+                .insert(UserAnswer)
                 .values(payload)
                 .returning({ id: UserAnswer.id });
 
@@ -144,54 +178,111 @@ export async function saveAnswerAction(params: {
 }
 
 // 3. Generate feedback batch (Migration of generate-feedback-batch API)
-export async function generateFeedbackBatchAction(params: { mockIdRef: string }) {
+export async function generateFeedbackAction(mockIdRef: string) {
     try {
-        const { mockIdRef } = params;
+        const user = await currentUser();
+        const email = user?.primaryEmailAddress?.emailAddress;
 
-        const answers = await db.select().from(UserAnswer)
-            .where(eq(UserAnswer.mockIdRef, mockIdRef));
-
-        const pending = answers.filter((item) => !item.feedback || !item.rating);
-
-        if (pending.length > 0) {
-            await Promise.all(
-                pending.map(async (ans) => {
-                    try {
-                        const prompt = `Question : ${ans.question} , UserAnswer : ${ans.userAnswer} , Depends on question and user answer please give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in JSON format with rating field and feedback field`;
-
-                        const response = await ai.models.generateContent({
-                            model: "gemini-2.5-flash",
-                            contents: [{ role: "user", parts: [{ text: prompt }] }],
-                        });
-
-                        const cleaned = response.text?.replace('```json', '').replace('```', '').trim();
-                        if (!cleaned) throw new Error("No feedback response received from Gemini");
-
-                        const parsed = JSON.parse(cleaned);
-
-                        await db.update(UserAnswer)
-                            .set({ feedback: parsed.feedback, rating: String(parsed.rating) })
-                            .where(eq(UserAnswer.id, ans.id));
-                    } catch (err) {
-                        console.error(`Feedback generation failed for answer ${ans.id}:`, err);
-                    }
-                })
-            );
+        if (!email) {
+            throw new Error("Unauthorized");
         }
 
-        const finalData = await db.select().from(UserAnswer)
+        // Verify ownership before proceeding
+        const ownershipCheck = await db
+            .select()
+            .from(mockInterview)
+            .where(
+                and(
+                    eq(mockInterview.mockId, mockIdRef),
+                    eq(mockInterview.createdBy, email)
+                )
+            );
+
+        if (!ownershipCheck || ownershipCheck.length === 0) {
+            throw new Error("Not found or access denied");
+        }
+
+        const answers = await db
+            .select()
+            .from(UserAnswer)
             .where(eq(UserAnswer.mockIdRef, mockIdRef))
             .orderBy(UserAnswer.id);
 
-        return {
-            results: finalData.map((item) => ({
-                ...item,
-                createdAt: item.createdAt.toISOString(),
-            })),
-        };
+        const pending = answers.filter(
+            item => !item.feedback || !item.rating
+        );
+
+        if (pending.length === 0) {
+            return { success: true };
+        }
+
+        const prompt = `
+You are an expert technical interviewer.
+
+Evaluate every answer independently.
+
+For each answer return:
+
+{
+  "results":[
+    {
+      "rating":8,
+      "feedback":"..."
+    }
+  ]
+}
+
+Questions:
+
+${pending.map((item, index) => `
+Question ${index + 1}
+${item.question}
+
+User Answer:
+${item.userAnswer}
+`).join("\n-----------------\n")}
+`;
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        const cleaned = response.text
+            ?.replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+
+        if (!cleaned) {
+            throw new Error("No response text received from Gemini");
+        }
+
+        let parsed;
+        try {
+            parsed = JSON.parse(cleaned);
+        } catch (e) {
+            console.error("Failed to parse Gemini response as JSON:", cleaned);
+            throw new Error("Invalid response format received from AI");
+        }
+
+        if (!parsed.results || parsed.results.length < pending.length) {
+            throw new Error("AI response did not cover all pending questions");
+        }
+
+        await db.transaction(async (tx) => {
+            for (let i = 0; i < pending.length; i++) {
+                await tx.update(UserAnswer)
+                    .set({
+                        rating: String(parsed.results[i].rating),
+                        feedback: parsed.results[i].feedback,
+                    })
+                    .where(eq(UserAnswer.id, pending[i].id));
+            }
+        });
+
+        return { success: true };
     } catch (error: any) {
-        console.error("generateFeedbackBatchAction error:", error);
-        throw new Error(`Batch feedback generation failed: ${error?.message || error}`);
+        console.error("generateFeedbackAction error:", error);
+        throw new Error(`Failed to generate feedback: ${error?.message || error}`);
     }
 }
 
@@ -226,14 +317,26 @@ export async function updateInterviewStatusAction(params: {
     status: 'pending' | 'completed';
 }) {
     try {
+        const user = await currentUser();
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+
+        if (!userEmail) {
+            throw new Error("Unauthorized");
+        }
+
         const { mockId, status } = params;
         const resp = await db.update(mockInterview)
             .set({ status })
-            .where(eq(mockInterview.mockId, mockId))
+            .where(
+                and(
+                    eq(mockInterview.mockId, mockId),
+                    eq(mockInterview.createdBy, userEmail)
+                )
+            )
             .returning({ mockId: mockInterview.mockId });
 
         if (!resp || resp.length === 0) {
-            throw new Error("Interview not found");
+            throw new Error("Not found or access denied");
         }
 
         return { success: true };
@@ -243,35 +346,5 @@ export async function updateInterviewStatusAction(params: {
     }
 }
 
-// 6. Get single mock interview details
-export async function getInterviewDetailsAction(mockId: string) {
-    try {
-        const user = await currentUser();
-        const email = user?.primaryEmailAddress?.emailAddress;
-
-        if (!email) {
-            throw new Error("Unauthorized");
-        }
-        const data = await db
-            .select()
-            .from(mockInterview)
-            .where(eq(mockInterview.mockId, mockId));
-
-        if (!data || data.length === 0) {
-            return null;
-        }
-
-        const interview = data[0];
-        const result = {
-            ...interview,
-            createdAt: interview.createdAt.toISOString()
-        };
-        console.log("getInterviewDetailsAction returning:", result);
-        return result;
-    } catch (error: any) {
-        console.error("getInterviewDetailsAction error:", error);
-        throw new Error(`Failed to fetch interview details: ${error?.message || error}`);
-    }
-}
 
 

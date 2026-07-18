@@ -1,5 +1,6 @@
 import Navbar from '@/components/homepage/sections/navbar';
 import Footer from '@/components/homepage/sections/footer';
+
 export default function notFound() {
     return (
         <>
@@ -9,3 +10,4 @@ export default function notFound() {
         </>
     );
 }
+

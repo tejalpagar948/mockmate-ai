@@ -10,7 +10,6 @@ import Dashboard from '@/components/dashboard/sections/dashboard';
 
 export default async function DashboardPage() {
   const user = await currentUser();
-
   let interviewList: typeof mockInterview.$inferSelect[] = [];
 
   try {

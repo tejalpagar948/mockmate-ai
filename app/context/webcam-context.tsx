@@ -7,6 +7,7 @@ import {
     useCallback,
     useRef,
     useEffect,
+    useMemo,
 } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -106,14 +107,12 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.removeItem("cameraEnabled");
     }, []);
 
-    // Camera should never stay active on feedback page
     useEffect(() => {
         if (isFeedbackPage) {
             disableCamera();
         }
     }, [isFeedbackPage, disableCamera]);
 
-    // Restore camera only on interview pages (not feedback)
     useEffect(() => {
         if (isFeedbackPage) return;
 
@@ -134,20 +133,26 @@ export function WebcamProvider({ children }: { children: React.ReactNode }) {
         return () => {
             streamRef.current?.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
+            setStream(null);
+            setIsEnabled(false);
+            setIsReady(false);
         };
     }, [enableCamera, isFeedbackPage]);
 
+    const value = useMemo(
+        () => ({
+            stream,
+            isEnabled,
+            isReady,
+            error,
+            enableCamera,
+            disableCamera,
+        }),
+        [stream, isEnabled, isReady, error, enableCamera, disableCamera]
+    );
+
     return (
-        <WebcamContext.Provider
-            value={{
-                stream,
-                isEnabled,
-                isReady,
-                error,
-                enableCamera,
-                disableCamera,
-            }}
-        >
+        <WebcamContext.Provider value={value}>
             {children}
         </WebcamContext.Provider>
     );

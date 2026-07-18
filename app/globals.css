@@ -37,10 +37,6 @@ body {
   font-family: 'Sora', sans-serif !important;
 }
 
-.cl-footer>*:last-child {
-  display: none !important;
-}
-
 .cl-rootBox {
   border-radius: 20px !important;
 }
@@ -64,6 +60,6 @@ body {
   background: #a855f7;
 }
 
-.cl-footer {
+.cl-internal-r93pb5 {
   display: none !important;
 }

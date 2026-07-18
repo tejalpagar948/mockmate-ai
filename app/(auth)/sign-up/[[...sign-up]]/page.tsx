@@ -1,4 +1,11 @@
 import { SignUp } from '@clerk/nextjs';
+import { Montserrat } from 'next/font/google';
+import { Stars } from '@/components/common/stars';
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  variable: '--font-montserrat',
+});
 
 export default async function SignUpPage({
   searchParams,
@@ -8,7 +15,7 @@ export default async function SignUpPage({
   const { fallbackRedirectUrl } = await searchParams;
 
   return (
-    <main className="relative min-h-dvh flex flex-col items-center justify-center px-4 overflow-hidden bg-[#0e0d14]">
+    <main className={`relative min-h-dvh flex flex-col items-center justify-center px-4 overflow-hidden bg-[#0e0d14] ${montserrat.variable}`}>
       {/* Radial glow */}
       <div
         className="pointer-events-none fixed inset-0 z-0"
@@ -18,7 +25,6 @@ export default async function SignUpPage({
         }}
       />
 
-      {/* Stars */}
       <Stars />
 
       {/* Clerk card */}
@@ -26,17 +32,41 @@ export default async function SignUpPage({
         <SignUp
           fallbackRedirectUrl={fallbackRedirectUrl}
           signInFallbackRedirectUrl={fallbackRedirectUrl}
+          appearance={{
+            variables: {
+              colorPrimary: '#5f51d',
+              colorBackground: '#0a0a0a',
+              colorText: '#ffffff',
+              colorInputBackground: '#1a1a1a',
+              colorInputText: '#ffffff',
+              fontFamily: 'var(--font-montserrat)',
+              borderRadius: '0.5rem',
+            },
+            elements: {
+              footer: 'hidden',
+              card: 'bg-[#0a0a0a] border border-white/5 shadow-2xl shadow-black/90 rounded-[0.5rem]',
+              headerTitle: 'text-white font-bold text-xl tracking-tight font-montserrat',
+              headerSubtitle: 'text-white/60 text-sm',
+              formButtonPrimary: 'bg-[#8D0006] hover:bg-[#b30008] text-white rounded-[0.5rem] font-medium py-2 px-4 transition-colors duration-200 cursor-pointer shadow-none border-none',
+              formFieldInput: 'bg-[#1a1a1a] border border-white/10 text-white rounded-[0.5rem] focus:border-[#8D0006] focus:ring-1 focus:ring-[#8D0006] transition-colors duration-150',
+              formFieldLabel: 'text-white/70 text-xs font-semibold uppercase tracking-wide',
+              identityPreviewText: 'text-white',
+              socialButtonsBlockButton: 'bg-[#1a1a1a] border border-white/10 text-white hover:bg-white/5 rounded-[0.5rem] transition-colors',
+              dividerLine: 'bg-white/10',
+              dividerText: 'text-white/40 text-xs uppercase tracking-wider',
+            },
+          }}
         />
       </div>
       {/* Sign in link */}
-      <p className="relative z-10 mt-4 text-sm text-white/35 font-sora">
+      {/* <p className="relative z-10 mt-4 text-sm text-white/35 font-sora">
         Already have an account?{' '}
         <a
           href="/sign-in"
           className="text-[#8b7ff0] font-medium hover:text-[#a897f5] transition-colors duration-200">
           Sign in
         </a>
-      </p>
+      </p> */}
 
       {/* Tagline */}
       {/* <p className="relative z-10 mt-6 text-[11px] tracking-[0.6px] uppercase text-white/20 font-sora">
@@ -46,73 +76,3 @@ export default async function SignUpPage({
   );
 }
 
-function MicIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <rect
-        x="9"
-        y="2"
-        width="6"
-        height="11"
-        rx="3"
-        fill="white"
-        fillOpacity="0.9"
-      />
-      <path
-        d="M5 11a7 7 0 0 0 14 0"
-        stroke="white"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <line
-        x1="12"
-        y1="18"
-        x2="12"
-        y2="22"
-        stroke="white"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <line
-        x1="9"
-        y1="22"
-        x2="15"
-        y2="22"
-        stroke="white"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function Stars() {
-  const stars = Array.from({ length: 70 }, (_, i) => ({
-    id: i,
-    size: Math.random() < 0.5 ? 'w-px h-px' : 'w-[1.5px] h-[1.5px]',
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    duration: `${(2 + Math.random() * 4).toFixed(1)}s`,
-    delay: `-${(Math.random() * 4).toFixed(1)}s`,
-    peak: (0.2 + Math.random() * 0.5).toFixed(2),
-  }));
-
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0">
-      {stars.map((s) => (
-        <span
-          key={s.id}
-          className={`absolute rounded-full bg-white ${s.size}`}
-          style={{
-            left: s.left,
-            top: s.top,
-            animation: `twinkle ${s.duration} ease-in-out ${s.delay} infinite`,
-            opacity: 0,
-            ['--peak' as string]: s.peak,
-          }}
-        />
-      ))}
-      <style>{`@keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--peak)} }`}</style>
-    </div>
-  );
-}
